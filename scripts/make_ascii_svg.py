@@ -1,123 +1,150 @@
-"""Convert a prepped grayscale photo into a self-typing monochrome ASCII SVG.
-
-Downsamples the image to a character grid, maps brightness to a density
-ramp, and wraps each row in a clip-path wipe (left-to-right, staggered top
-to bottom) with a small block cursor riding the wipe edge.
-
-Animation notes -- these matter for GitHub:
-  * SMIL (<animate>) is used rather than CSS keyframes. Raw SVGs are served
-    under `Content-Security-Policy: default-src 'none'; sandbox`, and SMIL
-    is the most reliable thing to survive that in an <img> context.
-  * The portrait prints ONCE and then freezes (fill="freeze") -- no looping.
-    It replays only when the page is refreshed.
-  * The background is opaque, not transparent -- light-gray glyphs on
-    GitHub's light theme would otherwise be invisible.
-
-Usage: python scripts/make_ascii_svg.py [source-prepped.png] [out.svg]
 """
+Convert a portrait photo into a CLEAN, monochrome ASCII-art SVG (Andrew6rant
+style: one light-gray color, subject isolated on a dark background) that "types"
+itself in like a terminal, then holds.
+
+Monochrome is deliberate -- per-character rainbow color is what makes ASCII
+portraits look noisy. One fill color + a good density ramp + high contrast (so a
+busy background washes out to blank) reads as neat and legible.
+
+GitHub renders SVGs embedded via <img> and runs their SMIL animations there (JS
+does not run). Each row is revealed with a left-to-right clip wipe plus a small
+block cursor riding the wipe edge, staggered top -> bottom, so the whole
+portrait prints once and freezes.
+"""
+from PIL import Image, ImageEnhance, ImageOps, ImageFilter
+import html
+import os
 import sys
 
-from PIL import Image
-
-RAMP = " .`:-=+*cs#%@"   # bright (sparse) -> dark (dense)
-#        ^ leading space clears the background to nothing
+HERE = os.path.dirname(os.path.abspath(__file__))
+# defaults to the prepped grayscale image (see prep_photo.py), which already has
+# the background removed + local contrast applied.
+SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", "source-prepped.png")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "avi-ascii.svg")
 
 COLS = 100
 ROWS = 53
-CHAR_W = 7.2
-CHAR_H = 14
-FONT_SIZE = 13
-PAD = 16
+CELL_W = 8
+CELL_H = 15
+RAMP = " .`:-=+*cs#%@"  # bright(sparse) -> dark(dense); leading space clears bg
 
-FILL_COLOR = "#c9d1d9"          # single light-gray, monochrome on purpose
-BG_COLOR = "#0d1117"
-BORDER_COLOR = "#30363d"
-CURSOR_COLOR = "#39d353"
+# the prepped image already has bg removed + CLAHE local contrast, so only
+# light global tuning is needed here.
+CONTRAST = 1.05
+BRIGHTNESS = 1.0
+GAMMA = 1.18          # >1 brightens mids -> face lands in sparser chars
+SHARPEN = False
+WHITE_FLOOR = 0.80    # luminance above this is forced to blank (space)
 
-ROW_WIPE_DUR = 0.45              # seconds per row wipe
-ROW_STAGGER = 0.055              # seconds between each row starting
+PAD = 20
+TITLEBAR_H = 30
+STATUS_H = 30
+ART_W = COLS * CELL_W
+ART_H = ROWS * CELL_H
+CANVAS_W = ART_W + PAD * 2
+CANVAS_H = TITLEBAR_H + ART_H + STATUS_H + PAD
 
+BG = "#0d1117"
+BG2 = "#111722"
+FRAME = "#30363d"
+TITLE_TEXT = "#7d8590"
+INK = "#c9d1d9"      # the single ascii color (matches Andrew6rant)
+CURSOR = "#c9d1d9"
 
-def brightness_to_char(v: float) -> str:
-    idx = int((1 - v / 255) * (len(RAMP) - 1))
-    idx = max(0, min(len(RAMP) - 1, idx))
-    return RAMP[idx]
+# ---- reveal timing (one-shot; a cursor rasters top -> bottom) -------------
+ROW_DUR = 0.11
+STAGGER = 0.11       # == ROW_DUR -> a single cursor sweeping down
 
+# ---- 1. sample the image into a COLS x ROWS grayscale grid ----------------
+im = Image.open(SRC).convert("L")               # grayscale
+if SHARPEN:
+    im = im.filter(ImageFilter.UnsharpMask(radius=2, percent=140, threshold=2))
+im = ImageEnhance.Brightness(im).enhance(BRIGHTNESS)
+im = ImageEnhance.Contrast(im).enhance(CONTRAST)
+im = im.resize((COLS, ROWS), Image.LANCZOS)
+px = im.load()
 
-def image_to_rows(path: str) -> list[str]:
-    img = Image.open(path).convert("L").resize((COLS, ROWS), Image.LANCZOS)
-    pixels = img.load()
-    rows = []
-    for y in range(ROWS):
-        row = "".join(brightness_to_char(pixels[x, y]) for x in range(COLS))
-        rows.append(row)
-    return rows
+STATIC = bool(os.environ.get("STATIC"))  # emit frozen state for previews
 
+rows_txt = []
+for y in range(ROWS):
+    chars = []
+    for x in range(COLS):
+        lum = px[x, y] / 255.0
+        lum = pow(lum, GAMMA)
+        if lum >= WHITE_FLOOR:
+            chars.append(" ")
+            continue
+        idx = int((1.0 - lum) * (len(RAMP) - 1) + 0.5)
+        idx = max(0, min(len(RAMP) - 1, idx))
+        chars.append(RAMP[idx])
+    rows_txt.append("".join(chars))
 
-def build_svg(rows: list[str]) -> str:
-    content_w = COLS * CHAR_W
-    content_h = ROWS * CHAR_H
-    width = content_w + PAD * 2
-    height = content_h + PAD * 2
-    x_end = PAD + content_w
+art_top = TITLEBAR_H + PAD * 0.35
 
-    parts = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width:.0f}" '
-        f'height="{height:.0f}" viewBox="0 0 {width:.0f} {height:.0f}">',
-        "<style>"
-        "text{font-family:SFMono-Regular,Consolas,Menlo,monospace;"
-        f"font-size:{FONT_SIZE}px;fill:{FILL_COLOR};white-space:pre;}}"
-        "</style>",
-        f'<rect x="0.5" y="0.5" width="{width - 1:.0f}" '
-        f'height="{height - 1:.0f}" rx="8" fill="{BG_COLOR}" '
-        f'stroke="{BORDER_COLOR}"/>',
-        "<defs>",
-    ]
+# ---- 2. assemble SVG ------------------------------------------------------
+parts = []
+parts.append(
+    f'<svg xmlns="http://www.w3.org/2000/svg" width="{CANVAS_W}" height="{CANVAS_H}" '
+    f'viewBox="0 0 {CANVAS_W} {CANVAS_H}" font-family="ui-monospace, SFMono-Regular, '
+    f'Menlo, Consolas, monospace">'
+)
+parts.append('<defs>'
+             f'<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">'
+             f'<stop offset="0" stop-color="{BG2}"/><stop offset="1" stop-color="{BG}"/>'
+             f'</linearGradient></defs>')
 
-    for i in range(ROWS):
-        y_top = PAD + i * CHAR_H
-        parts.append(
-            f'<clipPath id="rowClip{i}">'
-            f'<rect x="{PAD}" y="{y_top:.0f}" width="0" height="{CHAR_H}">'
-            f'<animate attributeName="width" from="0" to="{content_w:.0f}" '
-            f'dur="{ROW_WIPE_DUR}s" begin="{i * ROW_STAGGER:.3f}s" '
-            f'fill="freeze"/>'
-            f"</rect></clipPath>"
-        )
-    parts.append("</defs>")
+parts.append(f'<rect width="{CANVAS_W}" height="{CANVAS_H}" rx="12" fill="url(#bg)"/>')
+parts.append(f'<rect x="0.5" y="0.5" width="{CANVAS_W-1}" height="{CANVAS_H-1}" rx="12" '
+             f'fill="none" stroke="{FRAME}" stroke-width="1"/>')
 
-    for i, row in enumerate(rows):
-        y_top = PAD + i * CHAR_H
-        y_text = y_top + CHAR_H - 3
-        begin = i * ROW_STAGGER
+parts.append(f'<line x1="0" y1="{TITLEBAR_H}" x2="{CANVAS_W}" y2="{TITLEBAR_H}" stroke="{FRAME}"/>')
+for i, dotcol in enumerate(["#ff5f56", "#ffbd2e", "#27c93f"]):
+    parts.append(f'<circle cx="{PAD + i*16}" cy="{TITLEBAR_H/2}" r="5" fill="{dotcol}"/>')
+parts.append(f'<text x="{CANVAS_W/2}" y="{TITLEBAR_H/2 + 4}" fill="{TITLE_TEXT}" font-size="12" '
+             f'text-anchor="middle">rushi@github: ~$ ./portrait.sh</text>')
 
-        parts.append(f'<g clip-path="url(#rowClip{i})">')
-        parts.append(
-            f'<text x="{PAD}" y="{y_text:.1f}" xml:space="preserve">'
-            f"{row}</text>"
-        )
-        parts.append("</g>")
+# one <text> per row (single color -> no per-char markup, tiny file)
+font_size = CELL_H * 0.86
+for ry, line in enumerate(rows_txt):
+    y = art_top + ry * CELL_H + CELL_H * 0.74
+    row_y = art_top + ry * CELL_H
+    delay = ry * STAGGER
+    safe = html.escape(line)
+    text = (f'<text xml:space="preserve" x="{PAD}" y="{y:.1f}" fill="{INK}" '
+            f'font-size="{font_size:.1f}" textLength="{ART_W}" lengthAdjust="spacing">{safe}</text>')
 
-        # Block cursor rides the wipe edge, hidden outside its own row's pass.
-        parts.append(
-            f'<rect y="{y_top:.0f}" width="{CHAR_W:.1f}" height="{CHAR_H}" '
-            f'fill="{CURSOR_COLOR}" opacity="0">'
-            f'<animate attributeName="x" from="{PAD}" to="{x_end:.0f}" '
-            f'dur="{ROW_WIPE_DUR}s" begin="{begin:.3f}s" fill="freeze"/>'
-            f'<animate attributeName="opacity" values="0;1;1;0" '
-            f'keyTimes="0;0.02;0.9;1" dur="{ROW_WIPE_DUR}s" '
-            f'begin="{begin:.3f}s" fill="freeze"/>'
-            f"</rect>"
-        )
+    if STATIC:
+        parts.append(text)
+        continue
 
-    parts.append("</svg>")
-    return "\n".join(parts)
+    parts.append(
+        f'<clipPath id="r{ry}"><rect x="{PAD}" y="{row_y:.1f}" height="{CELL_H}" width="0">'
+        f'<animate attributeName="width" from="0" to="{ART_W}" begin="{delay:.3f}s" '
+        f'dur="{ROW_DUR:.2f}s" fill="freeze"/></rect></clipPath>'
+    )
+    parts.append(f'<g clip-path="url(#r{ry})">{text}</g>')
+    parts.append(
+        f'<rect y="{row_y+1:.1f}" width="{CELL_W}" height="{CELL_H-2}" fill="{CURSOR}" opacity="0">'
+        f'<animate attributeName="x" from="{PAD}" to="{PAD+ART_W}" begin="{delay:.3f}s" '
+        f'dur="{ROW_DUR:.2f}s" fill="freeze"/>'
+        f'<set attributeName="opacity" to="0.85" begin="{delay:.3f}s"/>'
+        f'<set attributeName="opacity" to="0" begin="{delay+ROW_DUR:.3f}s"/></rect>'
+    )
 
+# status bar with a steady blinking cursor
+status_line_y = TITLEBAR_H + ART_H + PAD * 0.35
+status_y = status_line_y + 19
+parts.append(f'<line x1="0" y1="{status_line_y:.1f}" x2="{CANVAS_W}" y2="{status_line_y:.1f}" stroke="{FRAME}"/>')
+parts.append(f'<text x="{PAD}" y="{status_y:.1f}" fill="{TITLE_TEXT}" font-size="13">'
+             f'rushi@github:~$ whoami <tspan fill="{INK}">Rushi Agrawal</tspan></text>')
+parts.append(f'<rect x="{PAD+196}" y="{status_y-12:.1f}" width="8" height="14" fill="{INK}">'
+             f'<animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.5;0.51;1" '
+             f'dur="1s" repeatCount="indefinite"/></rect>')
 
-if __name__ == "__main__":
-    src = sys.argv[1] if len(sys.argv) > 1 else "source-prepped.png"
-    out = sys.argv[2] if len(sys.argv) > 2 else "avi-ascii.svg"
-    rows = image_to_rows(src)
-    with open(out, "w", encoding="utf-8") as f:
-        f.write(build_svg(rows))
-    print(f"wrote {out}")
+parts.append("</svg>")
+svg = "".join(parts)
+with open(OUT, "w") as f:
+    f.write(svg)
+print("wrote", OUT, len(svg), "bytes;", CANVAS_W, "x", CANVAS_H)

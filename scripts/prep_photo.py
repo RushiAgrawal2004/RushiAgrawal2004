@@ -1,47 +1,46 @@
-"""Prep a source photo for ASCII conversion: remove background, boost local
-contrast, composite onto white. Run once per photo, locally (not in CI) --
-this needs rembg/opencv which aren't installed by the daily workflow.
-
-Usage: python scripts/prep_photo.py source-photo.jpg
 """
+Prepare a portrait photo for clean ASCII conversion:
+  1. remove the background (rembg) so the subject is isolated
+  2. boost LOCAL contrast (CLAHE) so a flatly-lit face gains highlights and
+     shadows -- this is what turns a dark blob into a recognizable face
+  3. composite the subject onto pure white so the background reads as blank
+     (white -> spaces in the ascii ramp)
+
+Output: source-prepped.png (grayscale), consumed by make_ascii_svg.py.
+Run once whenever the source photo changes; the ascii SVG itself is static.
+
+    python scripts/prep_photo.py <input.jpg> [output.png]
+"""
+import os
 import sys
-from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
 from rembg import remove
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+INP = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", "source-photo.jpg")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "source-prepped.png")
 
-def prep(src_path: str, out_path: str = "source-prepped.png") -> None:
-    src_bytes = Path(src_path).read_bytes()
+# 1. cut out the subject
+cut = remove(Image.open(INP).convert("RGBA"))
+rgb = np.array(cut.convert("RGB"))
+alpha = np.array(cut.split()[-1])                 # 0 = background
 
-    # 1. Remove background so the subject is isolated.
-    cutout_bytes = remove(src_bytes)
-    cutout = Image.open(__import__("io").BytesIO(cutout_bytes)).convert("RGBA")
+# 2. local-contrast the luminance (CLAHE)
+gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+clahe = cv2.createCLAHE(clipLimit=2.6, tileGridSize=(8, 8))
+gray = clahe.apply(gray)
 
-    # 2. Composite onto pure white (transparent -> white, which maps to the
-    #    blank end of the ASCII ramp later).
-    white_bg = Image.new("RGBA", cutout.size, (255, 255, 255, 255))
-    composited = Image.alpha_composite(white_bg, cutout).convert("RGB")
+# a touch of global lift so the face sits in the sparse end of the ramp
+gray = cv2.convertScaleAbs(gray, alpha=1.05, beta=18)
 
-    # 3. Boost local contrast with CLAHE so a flatly-lit face gets real
-    #    highlights/shadows instead of converting to a dark, unreadable blob.
-    gray = cv2.cvtColor(np.array(composited), cv2.COLOR_RGB2GRAY)
-    clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
-    contrasted = clahe.apply(gray)
+# 3. paste onto white using the alpha mask (feathered a hair to avoid a halo)
+mask = (alpha.astype(np.float32) / 255.0)
+mask = cv2.GaussianBlur(mask, (0, 0), 1.0)
+out = gray.astype(np.float32) * mask + 255.0 * (1.0 - mask)
+out = np.clip(out, 0, 255).astype(np.uint8)
 
-    # Re-flatten anything that was pure background back to white so it maps
-    # cleanly to the blank glyph in the ASCII ramp.
-    alpha = np.array(cutout)[:, :, 3]
-    contrasted = np.where(alpha < 10, 255, contrasted).astype(np.uint8)
-
-    Image.fromarray(contrasted, mode="L").save(out_path)
-    print(f"wrote {out_path}")
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("usage: python scripts/prep_photo.py <source-photo>")
-        sys.exit(1)
-    prep(sys.argv[1])
+Image.fromarray(out, mode="L").save(OUT)
+print("wrote", OUT, out.shape)
