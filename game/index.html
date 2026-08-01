@@ -15,6 +15,13 @@
       (dropped an external Google Fonts dependency and a dead button) and
       a back-link to the profile was added.
     -->
+    <style>
+      /* index.css's padding-top:100px on .interstitial-wrapper matches
+         Chrome's real full-page error layout. This is embedded as a small
+         widget instead, so compact that down -- cosmetic only, doesn't
+         touch game logic. */
+      .offline .interstitial-wrapper { padding-top: 20px !important; }
+    </style>
 </head>
 
 <body id="t" class="offline">
