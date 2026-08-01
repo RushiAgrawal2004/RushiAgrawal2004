@@ -20,8 +20,13 @@
 
 <h3><code>rushi@github ~ $ ./no-wifi.exe</code></h3>
 
+<!-- the loading bar + rotating status lines are a joke: they loop forever
+     and the bar never actually reaches 100% -- a game about having no
+     internet connection that's eternally "loading" is the point.
+     regenerate: python scripts/make_game_preview.py <screenshot.png> -->
+
 <a href="https://rushiagrawal2004.github.io/RushiAgrawal2004/game/">
-  <img src="./game/preview.png" width="420" alt="the real Chromium offline dino game — click to play" />
+  <img src="./game/preview.svg" width="420" alt="the real Chromium offline dino game — click to play" />
 </a>
 <p><a href="https://rushiagrawal2004.github.io/RushiAgrawal2004/game/"><b>▶ click to play</b></a></p>
 
