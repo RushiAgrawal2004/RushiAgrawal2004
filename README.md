@@ -21,9 +21,8 @@
 <h3><code>rushi@github ~ $ ./no-wifi.exe</code></h3>
 
 <a href="https://rushiagrawal2004.github.io/RushiAgrawal2004/game/">
-  <img src="./game/preview.png" width="600" alt="the real Chromium offline dino game — click to play" />
-  <br>
-  <b>▶ click to play</b>
+  <img src="./game/preview.png" width="420" alt="the real Chromium offline dino game — click to play" />
 </a>
+<p><a href="https://rushiagrawal2004.github.io/RushiAgrawal2004/game/"><b>▶ click to play</b></a></p>
 
 </div>
