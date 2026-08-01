@@ -12,4 +12,14 @@
 
 <p><a href="https://github.com/RushiAgrawal2004">github.com/RushiAgrawal2004</a></p>
 
+<!-- README images can only animate (SMIL/CSS), never respond to input --
+     GitHub sandboxes SVGs embedded via <img>. So the actually-playable
+     game lives on GitHub Pages instead and gets linked here. It's the
+     real Chromium offline dino game (BSD-3-Clause, via
+     github.com/wayou/t-rex-runner), not a recreation -- see game/. -->
+
+<h3><code>rushi@github ~ $ ./no-wifi.exe</code></h3>
+
+<p><a href="https://rushiagrawal2004.github.io/RushiAgrawal2004/game/">▶ play the dino game</a></p>
+
 </div>
