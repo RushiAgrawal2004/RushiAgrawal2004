@@ -1,5 +1,16 @@
 <div align="center">
 
+<!-- boot sequence: a fake ssh login types itself out line by line, then
+     hands off into the whoami panel below -- the last typed line,
+     ./portrait.sh, is literally what that panel's own titlebar is running,
+     so the two read as one continuous terminal session.
+     regenerate: python scripts/make_boot_intro.py -->
+
+<img src="./intro.svg" width="430" alt="boot sequence" />
+
+<br>
+<br>
+
 <!-- hero: monochrome ASCII portrait (types in, terminal-framed) stacked
      above the extruded 3D ascii wordmark (wipes in left-to-right, then rocks
      on its vertical axis, forever -- an intentional idle animation).
