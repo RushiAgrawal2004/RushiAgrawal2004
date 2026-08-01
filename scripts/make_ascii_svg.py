@@ -8,8 +8,8 @@ Animation notes -- these matter for GitHub:
   * SMIL (<animate>) is used rather than CSS keyframes. Raw SVGs are served
     under `Content-Security-Policy: default-src 'none'; sandbox`, and SMIL
     is the most reliable thing to survive that in an <img> context.
-  * The cycle LOOPS. A play-once-then-freeze animation finishes before the
-    image has even decoded, so a visitor only ever sees the frozen frame.
+  * The portrait prints ONCE and then freezes (fill="freeze") -- no looping.
+    It replays only when the page is refreshed.
   * The background is opaque, not transparent -- light-gray glyphs on
     GitHub's light theme would otherwise be invisible.
 
@@ -35,8 +35,7 @@ BORDER_COLOR = "#30363d"
 CURSOR_COLOR = "#39d353"
 
 ROW_WIPE_DUR = 0.45              # seconds per row wipe
-ROW_STAGGER = 0.045              # seconds between each row starting
-HOLD = 3.0                       # seconds the finished portrait rests
+ROW_STAGGER = 0.055              # seconds between each row starting
 
 
 def brightness_to_char(v: float) -> str:
@@ -62,9 +61,6 @@ def build_svg(rows: list[str]) -> str:
     height = content_h + PAD * 2
     x_end = PAD + content_w
 
-    # One full cycle: last row finishes, portrait holds, then resets.
-    cycle = ROWS * ROW_STAGGER + ROW_WIPE_DUR + HOLD
-
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width:.0f}" '
         f'height="{height:.0f}" viewBox="0 0 {width:.0f} {height:.0f}">',
@@ -80,15 +76,12 @@ def build_svg(rows: list[str]) -> str:
 
     for i in range(ROWS):
         y_top = PAD + i * CHAR_H
-        t0 = (i * ROW_STAGGER) / cycle
-        t1 = (i * ROW_STAGGER + ROW_WIPE_DUR) / cycle
         parts.append(
             f'<clipPath id="rowClip{i}">'
             f'<rect x="{PAD}" y="{y_top:.0f}" width="0" height="{CHAR_H}">'
-            f'<animate attributeName="width" '
-            f'values="0;0;{content_w:.0f};{content_w:.0f};0" '
-            f'keyTimes="0;{t0:.4f};{t1:.4f};0.97;1" '
-            f'dur="{cycle:.2f}s" repeatCount="indefinite"/>'
+            f'<animate attributeName="width" from="0" to="{content_w:.0f}" '
+            f'dur="{ROW_WIPE_DUR}s" begin="{i * ROW_STAGGER:.3f}s" '
+            f'fill="freeze"/>'
             f"</rect></clipPath>"
         )
     parts.append("</defs>")
@@ -96,10 +89,7 @@ def build_svg(rows: list[str]) -> str:
     for i, row in enumerate(rows):
         y_top = PAD + i * CHAR_H
         y_text = y_top + CHAR_H - 3
-        t0 = (i * ROW_STAGGER) / cycle
-        t1 = (i * ROW_STAGGER + ROW_WIPE_DUR) / cycle
-        t1b = t1 + 0.006
-        keytimes = f"0;{t0:.4f};{t1:.4f};{t1b:.4f};1"
+        begin = i * ROW_STAGGER
 
         parts.append(f'<g clip-path="url(#rowClip{i})">')
         parts.append(
@@ -112,13 +102,11 @@ def build_svg(rows: list[str]) -> str:
         parts.append(
             f'<rect y="{y_top:.0f}" width="{CHAR_W:.1f}" height="{CHAR_H}" '
             f'fill="{CURSOR_COLOR}" opacity="0">'
-            f'<animate attributeName="x" '
-            f'values="{PAD};{PAD};{x_end:.0f};{x_end:.0f};{PAD}" '
-            f'keyTimes="{keytimes}" dur="{cycle:.2f}s" '
-            f'repeatCount="indefinite"/>'
-            f'<animate attributeName="opacity" values="0;1;1;0;0" '
-            f'keyTimes="{keytimes}" dur="{cycle:.2f}s" '
-            f'repeatCount="indefinite"/>'
+            f'<animate attributeName="x" from="{PAD}" to="{x_end:.0f}" '
+            f'dur="{ROW_WIPE_DUR}s" begin="{begin:.3f}s" fill="freeze"/>'
+            f'<animate attributeName="opacity" values="0;1;1;0" '
+            f'keyTimes="0;0.02;0.9;1" dur="{ROW_WIPE_DUR}s" '
+            f'begin="{begin:.3f}s" fill="freeze"/>'
             f"</rect>"
         )
 

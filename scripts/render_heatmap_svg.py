@@ -6,8 +6,8 @@ Animation notes -- these matter for GitHub:
     `Content-Security-Policy: default-src 'none'; sandbox`, and SMIL is the
     most reliable thing to survive that in an <img> context. CSS
     `transform-box: fill-box` in particular is inconsistent there.
-  * The cycle LOOPS. A play-once-then-freeze reveal is finished before the
-    image finishes decoding, so a visitor only ever sees the frozen frame.
+  * The grid reveals ONCE and then freezes (fill="freeze") -- no looping.
+    It replays only when the page is refreshed.
   * Opaque background so the dark GitHub-green ramp reads on light theme.
 
 Usage: python scripts/render_heatmap_svg.py
@@ -33,7 +33,6 @@ BORDER_COLOR = "#30363d"
 
 STAGGER = 0.035
 DUR = 0.5
-HOLD = 3.0
 
 MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -72,9 +71,6 @@ def build_svg(data: dict) -> str:
     width = LEFT_PAD + n_weeks * CELL + PAD + 10
     height = TOP_PAD + 7 * CELL + LEGEND_H + FOOTER_H + PAD
 
-    max_delay = (n_weeks + 6) * STAGGER
-    cycle = max_delay + DUR + HOLD
-
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
         f'height="{height}" viewBox="0 0 {width} {height}">',
@@ -96,16 +92,12 @@ def build_svg(data: dict) -> str:
             color = PALETTE[level]
 
             delay = (w + d) * STAGGER
-            t0 = delay / cycle
-            t1 = (delay + DUR) / cycle
-            keytimes = f"0;{t0:.4f};{t1:.4f};0.97;1"
 
             parts.append(
                 f'<rect x="{x}" y="{y}" width="{BOX}" height="{BOX}" '
                 f'rx="2" fill="{color}" opacity="0">'
-                f'<animate attributeName="opacity" values="0;0;1;1;0" '
-                f'keyTimes="{keytimes}" dur="{cycle:.2f}s" '
-                f'repeatCount="indefinite"/>'
+                f'<animate attributeName="opacity" from="0" to="1" '
+                f'dur="{DUR}s" begin="{delay:.3f}s" fill="freeze"/>'
                 f'<title>{day["count"]} contributions on {day["date"]}</title>'
                 f"</rect>"
             )

@@ -8,29 +8,29 @@
 <circle cx="60" cy="16" r="6" fill="#27c93f"/>
 <text x="245" y="20" text-anchor="middle" class="title">avi@github</text>
 <g opacity="0" transform="translate(-12,0)">
-<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.0377;0.1256;0.97;1" dur="3.98s" repeatCount="indefinite"/>
-<animateTransform attributeName="transform" type="translate" values="-12,0;-12,0;0,0;0,0;-12,0" keyTimes="0;0.0377;0.1256;0.97;1" dur="3.98s" repeatCount="indefinite"/>
+<animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.15s" fill="freeze"/>
+<animateTransform attributeName="transform" type="translate" from="-12,0" to="0,0" dur="0.4s" begin="0.15s" fill="freeze"/>
 <rect x="12" y="42" width="4" height="16" rx="2" fill="#39d353"/>
 <text x="24" y="56" class="label">Now</text>
 <text x="130" y="56" class="value">Software Engineer</text>
 </g>
 <g opacity="0" transform="translate(-12,0)">
-<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.0678;0.1558;0.97;1" dur="3.98s" repeatCount="indefinite"/>
-<animateTransform attributeName="transform" type="translate" values="-12,0;-12,0;0,0;0,0;-12,0" keyTimes="0;0.0678;0.1558;0.97;1" dur="3.98s" repeatCount="indefinite"/>
+<animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.27s" fill="freeze"/>
+<animateTransform attributeName="transform" type="translate" from="-12,0" to="0,0" dur="0.4s" begin="0.27s" fill="freeze"/>
 <rect x="12" y="76" width="4" height="16" rx="2" fill="#58a6ff"/>
 <text x="24" y="90" class="label">Prev</text>
 <text x="130" y="90" class="value">Full-stack + creative dev</text>
 </g>
 <g opacity="0" transform="translate(-12,0)">
-<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.0980;0.1859;0.97;1" dur="3.98s" repeatCount="indefinite"/>
-<animateTransform attributeName="transform" type="translate" values="-12,0;-12,0;0,0;0,0;-12,0" keyTimes="0;0.0980;0.1859;0.97;1" dur="3.98s" repeatCount="indefinite"/>
+<animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.39s" fill="freeze"/>
+<animateTransform attributeName="transform" type="translate" from="-12,0" to="0,0" dur="0.4s" begin="0.39s" fill="freeze"/>
 <rect x="12" y="110" width="4" height="16" rx="2" fill="#e3b341"/>
 <text x="24" y="124" class="label">Stack</text>
 <text x="130" y="124" class="value">TypeScript, Python, React, Node</text>
 </g>
 <g opacity="0" transform="translate(-12,0)">
-<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.1281;0.2161;0.97;1" dur="3.98s" repeatCount="indefinite"/>
-<animateTransform attributeName="transform" type="translate" values="-12,0;-12,0;0,0;0,0;-12,0" keyTimes="0;0.1281;0.2161;0.97;1" dur="3.98s" repeatCount="indefinite"/>
+<animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.51s" fill="freeze"/>
+<animateTransform attributeName="transform" type="translate" from="-12,0" to="0,0" dur="0.4s" begin="0.51s" fill="freeze"/>
 <rect x="12" y="144" width="4" height="16" rx="2" fill="#f778ba"/>
 <text x="24" y="158" class="label">Highlights</text>
 <text x="130" y="158" class="value">Building small tools that ship</text>

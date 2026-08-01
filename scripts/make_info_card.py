@@ -24,10 +24,6 @@ ROWS = [
 
 HEIGHT = TOP_PAD + ROW_H * len(ROWS) + 24
 
-# Loop the reveal. A play-once-then-freeze animation is finished before the
-# image has decoded, so a visitor only ever sees the frozen frame.
-CYCLE = 0.15 + 0.12 * len(ROWS) + 0.35 + 3.0
-
 
 def build_svg() -> str:
     parts = [
@@ -59,19 +55,14 @@ def build_svg() -> str:
         parts.append(f'<g opacity="{1 if STATIC else 0}" '
                       f'transform="translate({0 if STATIC else -12},0)">')
         if not STATIC:
-            t0 = begin / CYCLE
-            t1 = (begin + 0.35) / CYCLE
-            keytimes = f"0;{t0:.4f};{t1:.4f};0.97;1"
             parts.append(
-                f'<animate attributeName="opacity" values="0;0;1;1;0" '
-                f'keyTimes="{keytimes}" dur="{CYCLE:.2f}s" '
-                f'repeatCount="indefinite"/>'
+                f'<animate attributeName="opacity" from="0" to="1" '
+                f'dur="0.4s" begin="{begin:.2f}s" fill="freeze"/>'
             )
             parts.append(
                 f'<animateTransform attributeName="transform" '
-                f'type="translate" values="-12,0;-12,0;0,0;0,0;-12,0" '
-                f'keyTimes="{keytimes}" dur="{CYCLE:.2f}s" '
-                f'repeatCount="indefinite"/>'
+                f'type="translate" from="-12,0" to="0,0" dur="0.4s" '
+                f'begin="{begin:.2f}s" fill="freeze"/>'
             )
         parts.append(
             f'<rect x="{LEFT_PAD - 8}" y="{y - 14}" width="4" height="16" '
