@@ -1,32 +1,11 @@
 <div align="center">
 
-<!-- boot sequence: a fake ssh login types itself out line by line, then
-     hands off into the whoami panel below -- the last typed line,
-     ./portrait.sh, is literally what that panel's own titlebar is running,
-     so the two read as one continuous terminal session.
-     regenerate: python scripts/make_boot_intro.py -->
-
-<img src="./intro.svg" width="430" alt="boot sequence" />
-
-<br>
-<br>
-
-<!-- hero: monochrome ASCII portrait, terminal-framed, types in once and freezes.
-     regenerate: python scripts/prep_photo.py <photo> && python scripts/make_ascii_svg.py -->
-
-<h3><code>rushi@github ~ $ whoami</code></h3>
-
-<img src="./avi-ascii.svg" width="420" alt="Rushi Agrawal — ASCII portrait" />
-
-<br>
-<br>
-
 <!-- animated contribution graph: real data, boxes reveal cell by cell
-     (regenerated daily by .github/workflows/update-profile-art.yml) -->
+     (refreshed hourly by .github/workflows/update-profile-art.yml) -->
 
 <h3><code>rushi@github ~ $ ./contributions.sh</code></h3>
 
-<img src="./contrib-heatmap.svg" width="860" alt="Rushi's GitHub contribution graph — auto-refreshed daily" />
+<img src="./contrib-heatmap.svg" width="860" alt="Rushi's GitHub contribution graph — auto-refreshed hourly" />
 
 <br>
 <br>
