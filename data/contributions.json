@@ -1,12 +1,12 @@
 {
   "username": "RushiAgrawal2004",
-  "generated_at": "2026-08-29T21:39:15Z",
+  "generated_at": "2026-08-30T00:05:09Z",
   "range": {
-    "start": "2025-08-24",
-    "end": "2026-08-29"
+    "start": "2025-08-31",
+    "end": "2026-08-30"
   },
-  "total_contributions": 1808,
-  "active_days": 349,
+  "total_contributions": 1791,
+  "active_days": 343,
   "avg_per_active_day": 5.2,
   "current_streak": {
     "length": 43,
@@ -25,7 +25,7 @@
   "monthly": [
     {
       "month": "2025-08",
-      "total": 21
+      "total": 3
     },
     {
       "month": "2025-09",
@@ -73,38 +73,10 @@
     },
     {
       "month": "2026-08",
-      "total": 553
+      "total": 554
     }
   ],
   "days": [
-    {
-      "date": "2025-08-24",
-      "count": 2
-    },
-    {
-      "date": "2025-08-25",
-      "count": 3
-    },
-    {
-      "date": "2025-08-26",
-      "count": 2
-    },
-    {
-      "date": "2025-08-27",
-      "count": 4
-    },
-    {
-      "date": "2025-08-28",
-      "count": 5
-    },
-    {
-      "date": "2025-08-29",
-      "count": 2
-    },
-    {
-      "date": "2025-08-30",
-      "count": 0
-    },
     {
       "date": "2025-08-31",
       "count": 3
@@ -1559,7 +1531,11 @@
     },
     {
       "date": "2026-08-29",
-      "count": 4
+      "count": 5
+    },
+    {
+      "date": "2026-08-30",
+      "count": 0
     }
   ]
 }
